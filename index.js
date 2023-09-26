@@ -10,20 +10,39 @@ async function createMap() {
     //Add markers
     var marker = L.marker([35.037262, -81.024644]).addTo(map);
     marker.bindPopup("<b>You are here</b>").openPopup()
+     // on submit render business markers 
+     document.querySelector('#submit').addEventListener('click', (e) => {
+        e.preventDefault()
+        console.log('btype', document.getElementById('business').value);
+        getBusinessMarkers(map,document.getElementById('business').value)
+    })
+    // return map;
+}
 
-    // add business markers
-    const options = {
+async function getBusinessMarkers(map, business) {
+      // add business markers
+      const options = {
         method: 'GET',
         headers: {
             accept: 'application/json',
-            Authorization: 'fsq31UuBfFYPMiXjCWFIei8CMCfw2OJHrFWNv2/anXIf1Z0='
+            Authorization: 'API key'
         }
     };
+    // Dynamically loading query params
+    // console.log('business type', selectBusiness.value);
+    const searchParams = new URLSearchParams({
+        // query: `${selectBusiness.value}`,
+        query: `${business}`,
+        ll: [35.037262, -81.024644],
+        limit: 5,
+    }).toString();
+    console.log('search query', searchParams);
 
-    let response = await fetch('https://api.foursquare.com/v3/places/search?query=coffee&ll=35%2C-80.95&limit=5', options)
+    let response = await fetch(`https://api.foursquare.com/v3/places/search?${searchParams}`, options)
         .catch(err => console.error(err));
     data = await response.json()
     console.log(data)
+    // console.log(data.results[0].fsqid)
     let places = getLocationsArray(data)
     console.log('places', places);
     getPlacesMarker(map, places)
@@ -44,9 +63,10 @@ async function getCoords() {
 function getLocationsArray(response) {
     let locationsArray = []
     for (let i = 0; i < response.results.length; i++) {
-        if (response.results[i].chains.length != 0) {
+        if (response.results[i].name) {
+            // console.log('fsqid', response.results[i].name);
             let place = {
-                name: response.results[i].chains[0].name,
+                name: response.results[i].name,
                 latitude: response.results[i].geocodes.main.latitude,
                 longitude: response.results[i].geocodes.main.longitude
             }
@@ -68,12 +88,14 @@ function getPlacesMarker(map, places) {
 
 async function main() {
     // let coords = await getCoords();
-    createMap()
-
+    let map = createMap()
+    // capture select option
     let selectBusiness = document.getElementById('business')
     selectBusiness.addEventListener('change', () => {
         console.log(selectBusiness.value);
     })
+   
+
 }
-// fsq31UuBfFYPMiXjCWFIei8CMCfw2OJHrFWNv2/anXIf1Z0=
+
 main()

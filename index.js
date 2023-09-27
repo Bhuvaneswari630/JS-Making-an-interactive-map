@@ -1,3 +1,22 @@
+const myMap = {
+    coordinates: [],
+    map: {},
+    placesLayer: {},
+    businessMarkers: [],
+    createMap() {
+        this.map = L.map('map').setView(this.coordinates, 12);
+        //Load tiles
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 12,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(this.map);
+        //Add geolocation marker
+        var marker = L.marker(this.coordinates).addTo(this.map);
+        marker.bindPopup("<b>You are here</b>").openPopup()
+        this.placesLayer = L.layerGroup().addTo(this.map)
+    },
+}
+
 async function getCoords() {
     //user might reject or accept or take 5min to see that i asked them to give permission
     //dont return promise resolve inline
@@ -10,41 +29,8 @@ async function getCoords() {
 
 }
 
-async function createMap() {
-    //Create map
 
-    var map = L.map('map').setView([35, -80.95], 13);
-    // console.log(L);
-    //Load tiles
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 12,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-    //Add markers
-    var marker = L.marker([35.037262, -81.024644]).addTo(map);
-    marker.bindPopup("<b>You are here</b>").openPopup()
-    let placesLayer = L.layerGroup().addTo(map)
-    // console.log('change statue',isSelectChanged);
-    // document.querySelector('#business').addEventListener('change', (e) => {
-    //     e.preventDefault()
-    //     console.log('removing search results', isSelectChanged);
-    //     placesLayer.clearLayers()
-    // })
-    // if (isSelectOptionChanged) {
-        // on submit render business markers 
-        let placesMarker = document.querySelector('#submit').addEventListener('click', (e) => {
-            e.preventDefault()
-            placesLayer.clearLayers()
-            console.log('btype', document.getElementById('business').value);
-            return getBusinessMarkers(document.getElementById('business').value, placesLayer)
-        })
-    // }
-    console.log('places layer', placesLayer);  
-
-}
-
-async function getBusinessMarkers(business, placesLayer) {
-    let coords = [35, -80.95];
+async function getBusinessMarkers(business, placesLayer, coords) {
     let data = await callFSQapi(business, coords)
 
     console.log(data)
@@ -52,7 +38,7 @@ async function getBusinessMarkers(business, placesLayer) {
     console.log('places', places);
     // add business markers
     const placesMarker = getPlacesMarker(places, placesLayer)
-    console.log('places marker', placesMarker);
+    // console.log('places marker', placesMarker);
 
     return placesMarker;
 }
@@ -68,7 +54,6 @@ async function callFSQapi(business, coords) {
     // Dynamically loading query params
     console.log('business type', business);
     const searchParams = new URLSearchParams({
-        // query: `${selectBusiness.value}`,
         query: `${business}`,
         ll: `${coords}`,
         limit: 5,
@@ -78,7 +63,7 @@ async function callFSQapi(business, coords) {
     let response = await fetch(`https://api.foursquare.com/v3/places/search?${searchParams}`, options)
         .catch(err => console.error(err));
     data = await response.json()
-    console.log(data)
+    // console.log(data)
     return data
 }
 // Create business type specific locations array
@@ -86,13 +71,12 @@ function getLocationsArray(response) {
     let locationsArray = []
     for (let i = 0; i < response.results.length; i++) {
         if (response.results[i].name) {
-            // console.log('fsqid', response.results[i].name);
             let place = {
                 name: response.results[i].name,
                 latitude: response.results[i].geocodes.main.latitude,
                 longitude: response.results[i].geocodes.main.longitude
             }
-            console.log('inside getloc', response.results[i].geocodes.main.latitude);
+            // console.log('inside getloc', response.results[i].geocodes.main.latitude);
             locationsArray.push(place)
         }
     }
@@ -107,14 +91,26 @@ function getPlacesMarker(places, placesLayer) {
         marker.bindPopup(`<b>${places[i].name}</b>`)
         placesMarker.push(marker)
     }
-    // const placesLayer = L.layerGroup(placesMarker)
-    return placesMarker
+    return placesMarker;
 }
 
 async function main() {
-    let isSelectChanged = false
-    // let coords = await getCoords();
-    let map = createMap()
+    // Get geolocation of user
+    // const coords = await getCoords()
+
+    // Create map
+    myMap.coordinates = [35, -80.95];
+    myMap.createMap();
+
+    // Submit event handler
+    document.querySelector('#submit').addEventListener('click', (e) => {
+        e.preventDefault()
+        myMap.placesLayer.clearLayers()
+        const business = document.getElementById('business').value;
+        // console.log('btype', document.getElementById('business').value);
+        getBusinessMarkers(business, myMap.placesLayer, myMap.coordinates)
+    })
+
 }
 
 main()

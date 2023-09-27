@@ -29,7 +29,7 @@ async function getCoords() {
 
 }
 
-
+// Getting business specific markers
 async function getBusinessMarkers(business, placesLayer, coords) {
     let data = await callFSQapi(business, coords)
 
@@ -42,6 +42,7 @@ async function getBusinessMarkers(business, placesLayer, coords) {
 
     return placesMarker;
 }
+
 // Fetching data from four square api
 async function callFSQapi(business, coords) {
     const options = {
@@ -51,6 +52,7 @@ async function callFSQapi(business, coords) {
             Authorization: 'API-Key'
         }
     };
+
     // Dynamically loading query params
     console.log('business type', business);
     const searchParams = new URLSearchParams({
@@ -66,6 +68,7 @@ async function callFSQapi(business, coords) {
     // console.log(data)
     return data
 }
+
 // Create business type specific locations array
 function getLocationsArray(response) {
     let locationsArray = []
@@ -96,10 +99,11 @@ function getPlacesMarker(places, placesLayer) {
 
 async function main() {
     // Get geolocation of user
-    // const coords = await getCoords()
+    const coords = await getCoords()
 
     // Create map
-    myMap.coordinates = [35, -80.95];
+    myMap.coordinates = coords;
+    // myMap.coordinates = [35, -80.95];
     myMap.createMap();
 
     // Submit event handler
